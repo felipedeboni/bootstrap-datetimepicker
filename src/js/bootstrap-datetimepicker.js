@@ -126,6 +126,7 @@
                 46: 'delete'
             },
             keyState = {},
+            keyPressHandled = {},
 
             /********************************************************************************
              *
@@ -193,17 +194,17 @@
 
             getDatePickerTemplate = function () {
                 var headTemplate = $('<thead>')
-                        .append($('<tr>')
-                            .append($('<th>').addClass('prev').attr('data-action', 'previous')
+                        .append($('<tr class="datepicker-header-navigation">')
+                            .append($('<td>').addClass('prev').attr('data-action', 'previous')
                                 .append($('<span>').addClass(options.icons.previous))
                                 )
-                            .append($('<th>').addClass('picker-switch').attr('data-action', 'pickerSwitch').attr('colspan', (options.calendarWeeks ? '6' : '5')))
-                            .append($('<th>').addClass('next').attr('data-action', 'next')
+                            .append($('<td>').addClass('picker-switch').attr('data-action', 'pickerSwitch').attr('colspan', (options.calendarWeeks ? '6' : '5')))
+                            .append($('<td>').addClass('next').attr('data-action', 'next')
                                 .append($('<span>').addClass(options.icons.next))
                                 )
                             ),
                     contTemplate = $('<tbody>')
-                        .append($('<tr>')
+                        .append($('<tr class="datepicker-body-content">')
                             .append($('<td>').attr('colspan', (options.calendarWeeks ? '8' : '7')))
                             );
 
@@ -578,12 +579,12 @@
                     spans.push($('<span>').attr('data-action', 'selectMonth').addClass('month').text(monthsShort.format('MMM')));
                     monthsShort.add(1, 'M');
                 }
-                widget.find('.datepicker-months td').empty().append(spans);
+                widget.find('.datepicker-months .datepicker-body-content td').empty().append(spans);
             },
 
             updateMonths = function () {
                 var monthsView = widget.find('.datepicker-months'),
-                    monthsViewHeader = monthsView.find('th'),
+                    monthsViewHeader = monthsView.find('.datepicker-header-navigation td'),
                     months = monthsView.find('tbody').find('span');
 
                 monthsViewHeader.eq(0).find('span').attr('title', options.tooltips.prevYear);
@@ -616,7 +617,7 @@
 
             updateYears = function () {
                 var yearsView = widget.find('.datepicker-years'),
-                    yearsViewHeader = yearsView.find('th'),
+                    yearsViewHeader = yearsView.find('.datepicker-header-navigation td'),
                     startYear = viewDate.clone().subtract(5, 'y'),
                     endYear = viewDate.clone().add(6, 'y'),
                     html = '';
@@ -642,12 +643,12 @@
                     startYear.add(1, 'y');
                 }
 
-                yearsView.find('td').html(html);
+                yearsView.find('.datepicker-body-content td').html(html);
             },
 
             updateDecades = function () {
                 var decadesView = widget.find('.datepicker-decades'),
-                    decadesViewHeader = decadesView.find('th'),
+                    decadesViewHeader = decadesView.find('.datepicker-header-navigation td'),
                     startDecade = moment({ y: viewDate.year() - (viewDate.year() % 100) - 1 }),
                     endDecade = startDecade.clone().add(100, 'y'),
                     startedAt = startDecade.clone(),
@@ -687,7 +688,7 @@
 
             fillDate = function () {
                 var daysView = widget.find('.datepicker-days'),
-                    daysViewHeader = daysView.find('th'),
+                    daysViewHeader = daysView.find('.datepicker-header-navigation td'),
                     currentDate,
                     html = [],
                     row,
@@ -944,7 +945,7 @@
                 widget.hide();
 
                 $(window).off('resize', place);
-                widget.off('click', '[data-action]');
+                widget.off('click touchstart', '[data-action]');
                 widget.off('mousedown', false);
 
                 widget.remove();
@@ -956,6 +957,7 @@
                 });
 
                 input.blur();
+                input.focus();
 
                 viewDate = date.clone();
 
@@ -1297,7 +1299,7 @@
                 showMode();
 
                 $(window).on('resize', place);
-                widget.on('click', '[data-action]', doAction); // this handles clicks on the widget
+                widget.on('click touchstart', '[data-action]', doAction); // this handles clicks and touchstart on the widget
                 widget.on('mousedown', false);
 
                 if (component && component.hasClass('btn')) {
@@ -1364,16 +1366,20 @@
                 }
 
                 if (handler) {
-                    handler.call(picker, widget);
-                    e.stopPropagation();
-                    e.preventDefault();
+                    if (handler.call(picker, widget)) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }
                 }
             },
 
             keyup = function (e) {
                 keyState[e.which] = 'r';
-                e.stopPropagation();
-                e.preventDefault();
+                if (keyPressHandled[e.which]) {
+                    keyPressHandled[e.which] = false;
+                    e.stopPropagation();
+                    e.preventDefault();
+                }
             },
 
             change = function (e) {
@@ -1385,20 +1391,31 @@
             },
 
             attachDatePickerElementEvents = function () {
-                input.on({
-                    'change': change,
-                    'blur': options.debug ? '' : hide,
-                    'keydown': keydown,
-                    'keyup': keyup,
-                    'focus': options.allowInputToggle ? show : ''
-                });
+                var hasPopup = input.data('no-popup') === undefined;
+                if (hasPopup) {
+                    input.on({
+                        'change': change,
+                        'blur': options.debug ? '' : hide,
+                        'keydown': keydown,
+                        'keyup': keyup,
+                        'focus': options.allowInputToggle ? show : ''
+                    });
+                } else {
+                    input.on({
+                        'change': change,
+                        'blur': options.debug ? '' : hide
+                    });
+                }
 
                 if (element.is('input')) {
-                    input.on({
-                        'focus': show
-                    });
+                    // NOTE KI not wanting to autoshow on focus (keyboard accessibility)
+                    if (hasPopup) {
+                        input.on({
+                            'click': show
+                        });
+                    }
                 } else if (component) {
-                    component.on('click', toggle);
+                    component.on('click touchstart', toggle);
                     component.on('mousedown', false);
                 }
             },
@@ -1417,7 +1434,7 @@
                         'focus': show
                     });
                 } else if (component) {
-                    component.off('click', toggle);
+                    component.off('click touchstart', toggle);
                     component.off('mousedown', false);
                 }
             },
@@ -1674,10 +1691,14 @@
                 update();
                 return picker;
             }
-            if (!(dates instanceof Array)) {
+
+            // Deep extend to prevent mutation
+            var disabledDates = $.extend(true, [], dates);
+
+            if (!(disabledDates instanceof Array)) {
                 throw new TypeError('disabledDates() expects an array parameter');
             }
-            options.disabledDates = indexGivenDates(dates);
+            options.disabledDates = indexGivenDates(disabledDates);
             options.enabledDates = false;
             update();
             return picker;
@@ -1701,10 +1722,14 @@
                 update();
                 return picker;
             }
-            if (!(dates instanceof Array)) {
+
+            // Deep extend to prevent mutation
+            var enabledDates = $.extend(true, [], dates);
+
+            if (!(enabledDates instanceof Array)) {
                 throw new TypeError('enabledDates() expects an array parameter');
             }
-            options.enabledDates = indexGivenDates(dates);
+            options.enabledDates = indexGivenDates(enabledDates);
             options.disabledDates = false;
             update();
             return picker;
@@ -2628,7 +2653,7 @@
         keyBinds: {
             up: function (widget) {
                 if (!widget) {
-                    return;
+                    return false;
                 }
                 var adjustedMinutes,
                     d = this.date() || this.getMoment();
@@ -2642,11 +2667,12 @@
                         this.date(d.clone().add(this.stepping(), 'm'));
                     }
                 }
+                return true;
             },
             down: function (widget) {
                 if (!widget) {
                     this.show();
-                    return;
+                    return false;
                 }
                 var d = this.date() || this.getMoment(),
                     newMinutes,
@@ -2662,10 +2688,11 @@
                         this.date(d.clone().subtract(this.stepping(), 'm'));
                     }
                 }
+                return true;
             },
             'control up': function (widget) {
                 if (!widget) {
-                    return;
+                    return false;
                 }
                 var d = this.date() || this.getMoment();
                 if (widget.find('.datepicker').is(':visible')) {
@@ -2677,10 +2704,11 @@
                         this.date(d.clone().add(1, 'h'));
                     }
                 }
+                return true;
             },
             'control down': function (widget) {
                 if (!widget) {
-                    return;
+                    return false;
                 }
                 var d = this.date() || this.getMoment();
                 if (widget.find('.datepicker').is(':visible')) {
@@ -2692,48 +2720,58 @@
                         this.date(d.clone().subtract(1, 'h'));
                     }
                 }
+                return true;
             },
             left: function (widget) {
                 if (!widget) {
-                    return;
+                    return false;
                 }
                 var d = this.date() || this.getMoment();
                 if (widget.find('.datepicker').is(':visible')) {
                     this.date(d.clone().subtract(1, 'd'));
                 }
+                return true;
             },
             right: function (widget) {
                 if (!widget) {
-                    return;
+                    return false;
                 }
                 var d = this.date() || this.getMoment();
                 if (widget.find('.datepicker').is(':visible')) {
                     this.date(d.clone().add(1, 'd'));
                 }
+                return true;
             },
             pageUp: function (widget) {
                 if (!widget) {
-                    return;
+                    return false;
                 }
                 var d = this.date() || this.getMoment();
                 if (widget.find('.datepicker').is(':visible')) {
                     this.date(d.clone().subtract(1, 'M'));
                 }
+                return true;
             },
             pageDown: function (widget) {
                 if (!widget) {
-                    return;
+                    return false;
                 }
                 var d = this.date() || this.getMoment();
                 if (widget.find('.datepicker').is(':visible')) {
                     this.date(d.clone().add(1, 'M'));
                 }
+                return true;
             },
             enter: function () {
                 this.hide();
+                return true;
             },
-            escape: function () {
+            escape: function (widget) {
+                if (!widget) {
+                    return false;
+                }
                 this.hide();
+                return true;
             },
             //tab: function (widget) { //this break the flow of the form. disabling for now
             //    var toggle = widget.find('.picker-switch a[data-action="togglePicker"]');
@@ -2741,17 +2779,24 @@
             //},
             'control space': function (widget) {
                 if (!widget) {
-                    return;
+                    return false;
                 }
                 if (widget.find('.timepicker').is(':visible')) {
                     widget.find('.btn[data-action="togglePeriod"]').click();
+                    return true;
                 }
+                return false;
             },
             t: function () {
                 this.date(this.getMoment());
+                return true;
             },
-            'delete': function () {
+            'delete': function (widget) {
+                if (!widget) {
+                    return false;
+                }
                 this.clear();
+                return true;
             }
         },
         debug: false,
