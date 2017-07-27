@@ -1497,7 +1497,7 @@
          ********************************************************************************/
         picker.destroy = function () {
             ///<summary>Destroys the widget and removes all attached event listeners</summary>
-            $(document).off('mousedown', clickedOutside);
+            $(document).off('mousedown', picker.clickedOutside);
             hide();
             detachDatePickerElementEvents();
             element.removeData('DateTimePicker');
