@@ -193,17 +193,17 @@
 
             getDatePickerTemplate = function () {
                 var headTemplate = $('<thead>')
-                        .append($('<tr>')
-                            .append($('<th>').addClass('prev').attr('data-action', 'previous')
+                        .append($('<tr class="datepicker-header-navigation">')
+                            .append($('<td>').addClass('prev').attr('data-action', 'previous')
                                 .append($('<span>').addClass(options.icons.previous))
                                 )
-                            .append($('<th>').addClass('picker-switch').attr('data-action', 'pickerSwitch').attr('colspan', (options.calendarWeeks ? '6' : '5')))
-                            .append($('<th>').addClass('next').attr('data-action', 'next')
+                            .append($('<td>').addClass('picker-switch').attr('data-action', 'pickerSwitch').attr('colspan', (options.calendarWeeks ? '6' : '5')))
+                            .append($('<td>').addClass('next').attr('data-action', 'next')
                                 .append($('<span>').addClass(options.icons.next))
                                 )
                             ),
                     contTemplate = $('<tbody>')
-                        .append($('<tr>')
+                        .append($('<tr class="datepicker-body-content">')
                             .append($('<td>').attr('colspan', (options.calendarWeeks ? '8' : '7')))
                             );
 
@@ -578,12 +578,12 @@
                     spans.push($('<span>').attr('data-action', 'selectMonth').addClass('month').text(monthsShort.format('MMM')));
                     monthsShort.add(1, 'M');
                 }
-                widget.find('.datepicker-months td').empty().append(spans);
+                widget.find('.datepicker-months .datepicker-body-content td').empty().append(spans);
             },
 
             updateMonths = function () {
                 var monthsView = widget.find('.datepicker-months'),
-                    monthsViewHeader = monthsView.find('th'),
+                    monthsViewHeader = monthsView.find('.datepicker-header-navigation td'),
                     months = monthsView.find('tbody').find('span');
 
                 monthsViewHeader.eq(0).find('span').attr('title', options.tooltips.prevYear);
@@ -616,7 +616,7 @@
 
             updateYears = function () {
                 var yearsView = widget.find('.datepicker-years'),
-                    yearsViewHeader = yearsView.find('th'),
+                    yearsViewHeader = yearsView.find('.datepicker-header-navigation td'),
                     startYear = viewDate.clone().subtract(5, 'y'),
                     endYear = viewDate.clone().add(6, 'y'),
                     html = '';
@@ -642,12 +642,12 @@
                     startYear.add(1, 'y');
                 }
 
-                yearsView.find('td').html(html);
+                yearsView.find('.datepicker-body-content td').html(html);
             },
 
             updateDecades = function () {
                 var decadesView = widget.find('.datepicker-decades'),
-                    decadesViewHeader = decadesView.find('th'),
+                    decadesViewHeader = decadesView.find('.datepicker-header-navigation td'),
                     startDecade = moment({ y: viewDate.year() - (viewDate.year() % 100) - 1 }),
                     endDecade = startDecade.clone().add(100, 'y'),
                     startedAt = startDecade.clone(),
@@ -687,7 +687,7 @@
 
             fillDate = function () {
                 var daysView = widget.find('.datepicker-days'),
-                    daysViewHeader = daysView.find('th'),
+                    daysViewHeader = daysView.find('.datepicker-header-navigation td'),
                     currentDate,
                     html = [],
                     row,
