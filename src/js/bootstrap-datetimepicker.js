@@ -1,4 +1,4 @@
-/*! version : 4.17.48
+/*! version : 4.17.49
  =========================================================
  bootstrap-datetimejs
  https://github.com/Eonasdan/bootstrap-datetimepicker
@@ -2807,7 +2807,7 @@
                 return true;
             }
         },
-        debug: true,
+        debug: false,
         allowInputToggle: false,
         disabledTimeIntervals: false,
         disabledHours: false,
